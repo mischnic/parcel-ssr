@@ -21,6 +21,7 @@ async function createServer(
         { packageName: "@parcel/reporter-cli", resolveFrom: __filename },
       ],
       hmrOptions: { port: 3001 },
+      shouldPatchConsole: false,
     });
 
     await bundler.watch();
@@ -36,14 +37,21 @@ async function createServer(
     try {
       const url = req.originalUrl;
 
-      // $FlowFixMe
-      // TODO this doesn't do hot reaload
       let server;
       if (process.env.NODE_ENV !== "production") {
+        // TODO
+        let name = Object.keys(global).find((n) =>
+          n.startsWith("parcelRequire")
+        );
+        if (name != null) {
+          global[name] = null;
+        }
+        delete global.parcelRequire;
         server = requireFresh("./dist-server/index.js");
       } else {
         server = require("./dist-server/index.js");
       }
+
       let context = {};
       let appHtml = server.render(url, context);
 
